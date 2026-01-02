@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operation Sentinel - System Status</title>
+    <link rel="stylesheet" href="css/utils.css">
+</head>
+<body class="bg-gray-100 font-sans h-screen flex justify-center items-center m-0">
+    <main class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center">
+        <h1 class="text-2xl font-bold text-gray-800 m-0">Sentinel Status Board</h1>
+
+        <div class="mt-4 p-4 rounded-lg bg-gray-100" role="status" aria-live="polite">
+            <p class="text-gray-500">System Status</p>
+            <p id="status-indicator" class="text-xl font-bold text-green-600">Checking...</p>
+        </div>
+
+        <div class="mt-4 text-gray-500">
+            <p>Uptime: <span id="uptime-display">--</span>s</p>
+            <p class="text-sm mt-4">Security Protocol: Active</p>
+        </div>
+    </main>
+
+    <script>
+        async function fetchStatus() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+
+                const statusEl = document.getElementById('status-indicator');
+                const uptimeEl = document.getElementById('uptime-display');
+
+                if (data.status === 'operational') {
+                    statusEl.textContent = 'OPERATIONAL';
+                    statusEl.className = 'text-xl font-bold text-green-600';
+                } else {
+                    statusEl.textContent = 'SYSTEM ALERT';
+                    statusEl.className = 'text-xl font-bold text-red-600';
+                }
+
+                uptimeEl.textContent = Math.floor(data.uptime);
+            } catch (error) {
+                console.error('Status check failed:', error);
+                document.getElementById('status-indicator').textContent = 'CONNECTION LOST';
+                document.getElementById('status-indicator').className = 'text-xl font-bold text-gray-800';
+            }
+        }
+
+        // Initial check
+        fetchStatus();
+
+        // Polling every 5 seconds
+        setInterval(fetchStatus, 5000);
+    </script>
+</body>
+</html>
