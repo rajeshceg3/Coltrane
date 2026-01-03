@@ -13,44 +13,74 @@
         <div class="mt-4 p-4 rounded-lg bg-gray-100" role="status" aria-live="polite">
             <p class="text-gray-500">System Status</p>
             <p id="status-indicator" class="text-xl font-bold text-green-600">Checking...</p>
+            <p id="threat-level" class="text-sm font-bold mt-4">THREAT: CHECKING</p>
         </div>
 
         <div class="mt-4 text-gray-500">
+            <p>Directive: <span id="directive-display" class="font-bold">...</span></p>
             <p>Uptime: <span id="uptime-display">--</span>s</p>
-            <p class="text-sm mt-4">Security Protocol: Active</p>
+            <button onclick="toggleCmd()" class="text-sm mt-4 text-gray-500 bg-white border-0" aria-label="Toggle Command Console">
+                Security Protocol: Active
+            </button>
+        </div>
+
+        <div id="cmd-console" class="hidden mt-4 bg-gray-100 p-4 rounded-lg">
+            <input id="cmd-threat" placeholder="Threat Level" class="w-full p-4 mb-2 rounded-lg" aria-label="Set Threat Level">
+            <input id="cmd-directive" placeholder="Directive" class="w-full p-4 mb-2 rounded-lg" aria-label="Set Directive">
+            <button onclick="updateStatus()" class="w-full bg-white p-4 rounded-lg font-bold" aria-label="Update Status">UPDATE</button>
         </div>
     </main>
 
     <script>
+        const statusEl = document.getElementById('status-indicator');
+        const threatEl = document.getElementById('threat-level');
+        const directiveEl = document.getElementById('directive-display');
+        const uptimeEl = document.getElementById('uptime-display');
+
+        function toggleCmd() {
+            const el = document.getElementById('cmd-console');
+            el.className = el.className.includes('hidden') ? 'block mt-4 bg-gray-100 p-4 rounded-lg' : 'hidden';
+        }
+
+        async function updateStatus() {
+            const threat = document.getElementById('cmd-threat').value;
+            const directive = document.getElementById('cmd-directive').value;
+            if (!threat && !directive) return;
+
+            await fetch('/api/tactical', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Auth-Token': 'SENTINEL-ALPHA'
+                },
+                body: JSON.stringify({
+                    ...(threat && { threatLevel: threat.toUpperCase() }),
+                    ...(directive && { directive: directive.toUpperCase() })
+                })
+            });
+            fetchStatus();
+        }
+
         async function fetchStatus() {
             try {
-                const response = await fetch('/api/health');
-                const data = await response.json();
+                const res = await fetch('/api/tactical');
+                const data = await res.json();
 
-                const statusEl = document.getElementById('status-indicator');
-                const uptimeEl = document.getElementById('uptime-display');
+                statusEl.textContent = data.status === 'operational' ? 'OPERATIONAL' : 'SYSTEM ALERT';
+                statusEl.className = `text-xl font-bold ${data.status === 'operational' ? 'text-green-600' : 'text-red-600'}`;
 
-                if (data.status === 'operational') {
-                    statusEl.textContent = 'OPERATIONAL';
-                    statusEl.className = 'text-xl font-bold text-green-600';
-                } else {
-                    statusEl.textContent = 'SYSTEM ALERT';
-                    statusEl.className = 'text-xl font-bold text-red-600';
-                }
+                threatEl.textContent = `THREAT: ${data.threatLevel}`;
+                threatEl.className = `text-sm font-bold mt-4 ${data.threatLevel === 'LOW' ? 'text-green-600' : (data.threatLevel === 'CRITICAL' ? 'text-red-600' : 'text-yellow-600')}`;
 
+                directiveEl.textContent = data.directive;
                 uptimeEl.textContent = Math.floor(data.uptime);
-            } catch (error) {
-                console.error('Status check failed:', error);
-                document.getElementById('status-indicator').textContent = 'CONNECTION LOST';
-                document.getElementById('status-indicator').className = 'text-xl font-bold text-gray-800';
+            } catch (e) {
+                statusEl.textContent = 'CONNECTION LOST';
             }
         }
 
-        // Initial check
         fetchStatus();
-
-        // Polling every 5 seconds
-        setInterval(fetchStatus, 5000);
+        setInterval(fetchStatus, 2000);
     </script>
 </body>
 </html>
