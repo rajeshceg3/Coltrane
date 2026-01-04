@@ -20,34 +20,32 @@ app.use(express.static(path.join(__dirname, '../public')))
 
 app.use(express.json())
 
-let tacticalState = {
-  status: 'operational',
-  threatLevel: 'LOW',
-  directive: 'MONITORING ACTIVE'
-}
+const tacticalSys = require('./tactical')
 
 // Tactical API
 app.get('/api/tactical', (req, res) => {
-  res.json({ ...tacticalState, uptime: process.uptime() })
+  res.json({ ...tacticalSys.getSystemStatus(), uptime: process.uptime() })
 })
 
 app.post('/api/tactical', (req, res) => {
-  const auth = req.headers['x-auth-token']
-  if (auth !== 'SENTINEL-ALPHA') return res.status(401).json({ error: 'Unauthorized' })
+  if (req.headers['x-auth-token'] !== 'SENTINEL-ALPHA') return res.status(401).json({ error: 'Unauthorized' })
 
   if (req.body && typeof req.body === 'object') {
-    tacticalState = { ...tacticalState, ...req.body }
-    // Link System Status to Threat Level
-    if (tacticalState.threatLevel === 'CRITICAL') tacticalState.status = 'alert'
-    else if (tacticalState.threatLevel === 'LOW') tacticalState.status = 'operational'
+    tacticalSys.updateStatus(req.body)
   }
-  res.json(tacticalState)
+  res.json(tacticalSys.getSystemStatus())
+})
+
+app.post('/api/assets', (req, res) => {
+  if (req.headers['x-auth-token'] !== 'SENTINEL-ALPHA') return res.status(401).send()
+  tacticalSys.addAsset(req.body)
+  res.json({ success: true })
 })
 
 // Health Check API (Legacy)
 app.get('/api/health', (req, res) => {
   res.json({
-    status: tacticalState.status,
+    status: tacticalSys.state.status,
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
   })

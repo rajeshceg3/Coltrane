@@ -28,7 +28,26 @@ test('GET /api/tactical', async (t) => {
   assert.strictEqual(response.status, 200)
   assert.strictEqual(data.threatLevel, 'LOW')
   assert.ok(data.uptime >= 0)
+  assert.ok(Array.isArray(data.logs))
 
+  server.close()
+})
+
+test('POST /api/assets - Success', async (t) => {
+  const server = app.listen(0)
+  const port = server.address().port
+  const url = `http://localhost:${port}/api/assets`
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Auth-Token': 'SENTINEL-ALPHA'
+    },
+    body: JSON.stringify({ name: 'Alpha-1', type: 'Scout' })
+  })
+
+  assert.strictEqual(response.status, 200)
   server.close()
 })
 

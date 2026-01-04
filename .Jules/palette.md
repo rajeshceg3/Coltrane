@@ -1,9 +1,13 @@
-# Palette's Journal
+## 2024-05-23 - Security: XSS Mitigation
+**Learning:**
+Direct assignment of API data to `innerHTML` exposes the application to Stored XSS attacks, especially when displaying user-generated content like log messages or asset names.
 
-## 2024-05-22 - Accessibility in Documentation
-**Learning:** Even in documentation, semantic HTML and descriptive alt text are crucial for screen reader users.
-**Action:** Always verify HTML structure and image descriptions in READMEs, not just application code.
+**Action:**
+Refactored `public/index.html` to use `document.createElement`, `textContent`, and `replaceChildren`. This ensures all dynamic content is treated as text, neutralizing any potential script injection.
 
-## 2024-05-24 - Hero Interaction Patterns
-**Learning:** Users instinctively try to click large hero images; in documentation, these should link to the primary product/action.
-**Action:** Wrap hero images in anchor tags and ensure responsive sizing (width="100%") to prevent layout shifts or overflow.
+## 2024-05-23 - Architecture: State Isolation
+**Learning:**
+Mixing administrative authentication tokens with public application state creates a high risk of credential leakage.
+
+**Action:**
+Implemented explicit property filtering in `TacticalSystem.updateStatus` to strip `auth` and `token` fields from update payloads before merging them into the state.

@@ -29,6 +29,14 @@
             <input id="cmd-directive" placeholder="Directive" class="w-full p-4 mb-2 rounded-lg" aria-label="Set Directive">
             <button onclick="updateStatus()" class="w-full bg-white p-4 rounded-lg font-bold" aria-label="Update Status">UPDATE</button>
         </div>
+
+        <div class="mt-4 text-left">
+            <h2 class="text-sm font-bold text-gray-800">Active Assets</h2>
+            <div id="asset-list" class="text-sm text-gray-500 mt-2 mb-4"></div>
+
+            <h2 class="text-sm font-bold text-gray-800">Event Log</h2>
+            <div id="event-log" class="text-sm text-gray-500 mt-2 h-32 overflow-y-auto"></div>
+        </div>
     </main>
 
     <script>
@@ -36,6 +44,8 @@
         const threatEl = document.getElementById('threat-level');
         const directiveEl = document.getElementById('directive-display');
         const uptimeEl = document.getElementById('uptime-display');
+        const logEl = document.getElementById('event-log');
+        const assetEl = document.getElementById('asset-list');
 
         function toggleCmd() {
             const el = document.getElementById('cmd-console');
@@ -74,6 +84,37 @@
 
                 directiveEl.textContent = data.directive;
                 uptimeEl.textContent = Math.floor(data.uptime);
+
+                if (data.logs) {
+                    logEl.replaceChildren(...data.logs.slice(0, 5).map(l => {
+                        const div = document.createElement('div');
+                        const span = document.createElement('span');
+                        span.className = 'font-bold text-xs';
+                        span.textContent = `[${l.source}]`;
+                        div.appendChild(span);
+                        div.appendChild(document.createTextNode(' ' + l.action));
+                        return div;
+                    }));
+                }
+
+                if (data.assets) {
+                    if (data.assets.length) {
+                        assetEl.replaceChildren(...data.assets.map(a => {
+                            const div = document.createElement('div');
+                            div.className = 'flex justify-between';
+                            const nameSpan = document.createElement('span');
+                            nameSpan.textContent = a.name;
+                            const typeSpan = document.createElement('span');
+                            typeSpan.className = 'font-bold';
+                            typeSpan.textContent = a.type || 'Unit';
+                            div.appendChild(nameSpan);
+                            div.appendChild(typeSpan);
+                            return div;
+                        }));
+                    } else {
+                        assetEl.textContent = 'No active assets';
+                    }
+                }
             } catch (e) {
                 statusEl.textContent = 'CONNECTION LOST';
             }
