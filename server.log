@@ -1,5 +1,5 @@
 
-> app@1.0.0 start
+> app@1.0.0 start /app
 > node src/server.js
 
 Sentinel Core active on port 3000
