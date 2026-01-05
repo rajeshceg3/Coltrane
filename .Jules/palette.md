@@ -1,13 +1,11 @@
-## 2024-05-23 - Security: XSS Mitigation
-**Learning:**
-Direct assignment of API data to `innerHTML` exposes the application to Stored XSS attacks, especially when displaying user-generated content like log messages or asset names.
+## 2026-01-05 - Utility Framework Extension
+**Learning:** The existing `utils.css` was minimal and lacked layout primitives required for the new feature (e.g., `relative`, `absolute`).
+**Action:** Extended `utils.css` with standard utility classes (`relative`, `absolute`, `border`, `w-2`, `h-2`, etc.) instead of creating a new stylesheet, adhering to the project's constraint of using the utility framework.
 
-**Action:**
-Refactored `public/index.html` to use `document.createElement`, `textContent`, and `replaceChildren`. This ensures all dynamic content is treated as text, neutralizing any potential script injection.
+## 2026-01-05 - Frontend Verification Strategy
+**Learning:** Verification of dynamic UI updates (like the map) requires waiting for polling intervals or manually triggered events.
+**Action:** Used `page.wait_for_timeout` in the verification script to account for the 2-second polling interval in `index.html`.
 
-## 2024-05-23 - Architecture: State Isolation
-**Learning:**
-Mixing administrative authentication tokens with public application state creates a high risk of credential leakage.
-
-**Action:**
-Implemented explicit property filtering in `TacticalSystem.updateStatus` to strip `auth` and `token` fields from update payloads before merging them into the state.
+## 2026-01-05 - Asset Visualization
+**Learning:** Percentage-based positioning (`left: X%`) can cause elements to clip at the edges (100%).
+**Action:** Implemented `calc(X% - 4px)` positioning to center the 8px (`w-2 h-2`) dots and ensure they remain fully visible within the container.

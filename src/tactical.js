@@ -40,7 +40,9 @@ class TacticalSystem {
 
     const safeAsset = {
       name: String(asset.name).slice(0, 50), // Limit length
-      type: String(asset.type || 'Unit').slice(0, 30)
+      type: String(asset.type || 'Unit').slice(0, 30),
+      x: typeof asset.x === 'number' && asset.x >= 0 && asset.x <= 100 ? asset.x : Math.floor(Math.random() * 100),
+      y: typeof asset.y === 'number' && asset.y >= 0 && asset.y <= 100 ? asset.y : Math.floor(Math.random() * 100)
     }
 
     this.assets.push(safeAsset)

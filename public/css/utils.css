@@ -35,3 +35,19 @@
 .bg-gray-100 { background-color: #f3f4f6; }
 .rounded-lg { border-radius: 0.5rem; }
 .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+
+/* Extended Layout */
+.relative { position: relative; }
+.absolute { position: absolute; }
+.overflow-hidden { overflow: hidden; }
+
+/* Dimensions */
+.w-2 { width: 0.5rem; }
+.h-2 { height: 0.5rem; }
+.h-64 { height: 16rem; }
+
+/* Extended Components */
+.bg-gray-200 { background-color: #e5e7eb; }
+.bg-blue-600 { background-color: #2563eb; }
+.border { border: 1px solid #d1d5db; }
+.rounded-full { border-radius: 9999px; }

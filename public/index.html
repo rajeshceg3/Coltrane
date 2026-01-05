@@ -27,10 +27,27 @@
         <div id="cmd-console" class="hidden mt-4 bg-gray-100 p-4 rounded-lg">
             <input id="cmd-threat" placeholder="Threat Level" class="w-full p-4 mb-2 rounded-lg" aria-label="Set Threat Level">
             <input id="cmd-directive" placeholder="Directive" class="w-full p-4 mb-2 rounded-lg" aria-label="Set Directive">
-            <button onclick="updateStatus()" class="w-full bg-white p-4 rounded-lg font-bold" aria-label="Update Status">UPDATE</button>
+
+            <hr class="border mt-4 mb-4">
+            <h3 class="text-sm font-bold text-gray-500 mb-2">Deploy Asset</h3>
+            <input id="asset-name" placeholder="Unit Name" class="w-full p-4 mb-2 rounded-lg" aria-label="Asset Name">
+            <input id="asset-type" placeholder="Unit Type" class="w-full p-4 mb-2 rounded-lg" aria-label="Asset Type">
+            <div class="flex justify-between">
+                <input id="asset-x" placeholder="X (0-100)" type="number" min="0" max="100" class="w-full p-4 mr-2 rounded-lg" aria-label="X Coordinate">
+                <input id="asset-y" placeholder="Y (0-100)" type="number" min="0" max="100" class="w-full p-4 ml-2 rounded-lg" aria-label="Y Coordinate">
+            </div>
+            <button onclick="deployAsset()" class="w-full bg-white p-4 mt-2 rounded-lg font-bold" aria-label="Deploy Asset">DEPLOY UNIT</button>
+
+            <hr class="border mt-4 mb-4">
+            <button onclick="updateStatus()" class="w-full bg-white p-4 rounded-lg font-bold" aria-label="Update Status">UPDATE STATUS</button>
         </div>
 
         <div class="mt-4 text-left">
+            <h2 class="text-sm font-bold text-gray-800">Tactical Map</h2>
+            <div class="relative w-full h-64 bg-gray-200 rounded-lg mt-2 mb-4 border overflow-hidden" id="tactical-map" aria-label="Tactical Grid Map">
+                <!-- Assets rendered here -->
+            </div>
+
             <h2 class="text-sm font-bold text-gray-800">Active Assets</h2>
             <div id="asset-list" class="text-sm text-gray-500 mt-2 mb-4"></div>
 
@@ -50,6 +67,30 @@
         function toggleCmd() {
             const el = document.getElementById('cmd-console');
             el.className = el.className.includes('hidden') ? 'block mt-4 bg-gray-100 p-4 rounded-lg' : 'hidden';
+        }
+
+        async function deployAsset() {
+            const name = document.getElementById('asset-name').value;
+            const type = document.getElementById('asset-type').value;
+            const x = document.getElementById('asset-x').value;
+            const y = document.getElementById('asset-y').value;
+
+            if (!name) return;
+
+            await fetch('/api/assets', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Auth-Token': 'SENTINEL-ALPHA'
+                },
+                body: JSON.stringify({
+                    name,
+                    type,
+                    x: x ? parseInt(x) : undefined,
+                    y: y ? parseInt(y) : undefined
+                })
+            });
+            fetchStatus();
         }
 
         async function updateStatus() {
@@ -98,6 +139,19 @@
                 }
 
                 if (data.assets) {
+                    // Update Map
+                    const mapEl = document.getElementById('tactical-map');
+                    mapEl.replaceChildren(...data.assets.map(a => {
+                        const dot = document.createElement('div');
+                        dot.className = 'absolute w-2 h-2 bg-blue-600 rounded-full';
+                        // Adjust position to center the dot and avoid clipping
+                        dot.style.left = `calc(${a.x}% - 4px)`;
+                        dot.style.top = `calc(${a.y}% - 4px)`;
+                        dot.title = `${a.name} (${a.type})`;
+                        return dot;
+                    }));
+
+                    // Update List
                     if (data.assets.length) {
                         assetEl.replaceChildren(...data.assets.map(a => {
                             const div = document.createElement('div');
@@ -106,7 +160,7 @@
                             nameSpan.textContent = a.name;
                             const typeSpan = document.createElement('span');
                             typeSpan.className = 'font-bold';
-                            typeSpan.textContent = a.type || 'Unit';
+                            typeSpan.textContent = `${a.type || 'Unit'} [${a.x},${a.y}]`;
                             div.appendChild(nameSpan);
                             div.appendChild(typeSpan);
                             return div;
