@@ -49,8 +49,27 @@ class TacticalSystem {
     this.logEvent('ASSET', `Unit registered: ${safeAsset.name}`)
   }
 
+  get telemetry () {
+    if (!this.assets.length) return null
+    const xs = this.assets.map(a => a.x)
+    const ys = this.assets.map(a => a.y)
+    const cx = Math.round(xs.reduce((a, b) => a + b, 0) / this.assets.length)
+    const cy = Math.round(ys.reduce((a, b) => a + b, 0) / this.assets.length)
+
+    // Avg distance from centroid
+    const avgDist = Math.round(this.assets.reduce((sum, a) => {
+      return sum + Math.sqrt(Math.pow(a.x - cx, 2) + Math.pow(a.y - cy, 2))
+    }, 0) / this.assets.length)
+
+    return {
+      centroid: { x: cx, y: cy },
+      avgSeparation: avgDist,
+      posture: avgDist < 20 ? 'CONCENTRATED' : (avgDist > 40 ? 'DISPERSED' : 'OPTIMAL')
+    }
+  }
+
   getSystemStatus () {
-    return { ...this.state, assets: this.assets, logs: this.logs }
+    return { ...this.state, assets: this.assets, logs: this.logs, telemetry: this.telemetry }
   }
 }
 

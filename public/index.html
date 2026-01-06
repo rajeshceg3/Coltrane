@@ -48,6 +48,11 @@
                 <!-- Assets rendered here -->
             </div>
 
+            <div id="telemetry-panel" class="hidden mb-4 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                <p><strong>FORCE POSTURE:</strong> <span id="posture-val">...</span></p>
+                <p><strong>AVG SEPARATION:</strong> <span id="separation-val">...</span></p>
+            </div>
+
             <h2 class="text-sm font-bold text-gray-800">Active Assets</h2>
             <div id="asset-list" class="text-sm text-gray-500 mt-2 mb-4"></div>
 
@@ -63,6 +68,9 @@
         const uptimeEl = document.getElementById('uptime-display');
         const logEl = document.getElementById('event-log');
         const assetEl = document.getElementById('asset-list');
+        const telemetryEl = document.getElementById('telemetry-panel');
+        const postureEl = document.getElementById('posture-val');
+        const sepEl = document.getElementById('separation-val');
 
         function toggleCmd() {
             const el = document.getElementById('cmd-console');
@@ -139,17 +147,30 @@
                 }
 
                 if (data.assets) {
-                    // Update Map
                     const mapEl = document.getElementById('tactical-map');
-                    mapEl.replaceChildren(...data.assets.map(a => {
+                    const mapChildren = data.assets.map(a => {
                         const dot = document.createElement('div');
                         dot.className = 'absolute w-2 h-2 bg-blue-600 rounded-full';
-                        // Adjust position to center the dot and avoid clipping
                         dot.style.left = `calc(${a.x}% - 4px)`;
                         dot.style.top = `calc(${a.y}% - 4px)`;
                         dot.title = `${a.name} (${a.type})`;
                         return dot;
-                    }));
+                    });
+
+                    if (data.telemetry) {
+                        telemetryEl.classList.remove('hidden');
+                        postureEl.textContent = data.telemetry.posture;
+                        sepEl.textContent = data.telemetry.avgSeparation;
+
+                        const center = document.createElement('div');
+                        center.className = 'absolute w-4 h-4 border-2 border-red-500 rounded-full opacity-50';
+                        center.style.left = `calc(${data.telemetry.centroid.x}% - 8px)`;
+                        center.style.top = `calc(${data.telemetry.centroid.y}% - 8px)`;
+                        mapChildren.push(center);
+                    } else {
+                        telemetryEl.classList.add('hidden');
+                    }
+                    mapEl.replaceChildren(...mapChildren);
 
                     // Update List
                     if (data.assets.length) {

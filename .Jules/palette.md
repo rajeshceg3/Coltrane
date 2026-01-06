@@ -1,11 +1,6 @@
-## 2026-01-05 - Utility Framework Extension
-**Learning:** The existing `utils.css` was minimal and lacked layout primitives required for the new feature (e.g., `relative`, `absolute`).
-**Action:** Extended `utils.css` with standard utility classes (`relative`, `absolute`, `border`, `w-2`, `h-2`, etc.) instead of creating a new stylesheet, adhering to the project's constraint of using the utility framework.
+## 2024-03-24 - Tactical Telemetry Implementation
+**Learning:**
+Implementing real-time spatial analysis (telemetry) directly in the state manager (`TacticalSystem`) allows for immediate feedback without client-side calculation overhead or complex database queries. The centroid calculation and "Force Posture" heuristic provide high-value strategic insight with minimal computational cost.
 
-## 2026-01-05 - Frontend Verification Strategy
-**Learning:** Verification of dynamic UI updates (like the map) requires waiting for polling intervals or manually triggered events.
-**Action:** Used `page.wait_for_timeout` in the verification script to account for the 2-second polling interval in `index.html`.
-
-## 2026-01-05 - Asset Visualization
-**Learning:** Percentage-based positioning (`left: X%`) can cause elements to clip at the edges (100%).
-**Action:** Implemented `calc(X% - 4px)` positioning to center the 8px (`w-2 h-2`) dots and ensure they remain fully visible within the container.
+**Action:**
+Added `telemetry` getter to `TacticalSystem` in `src/tactical.js`. This calculates the geometric centroid of all assets and their average dispersion. The frontend was updated to visualize this data, drawing a centroid marker on the map and displaying a "Force Posture" rating (CONCENTRATED vs DISPERSED). This transforms the application from a simple list to a situational awareness tool.
