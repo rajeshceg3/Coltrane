@@ -36,6 +36,10 @@
                 <input id="asset-x" placeholder="X (0-100)" type="number" min="0" max="100" class="w-full p-4 mr-2 rounded-lg" aria-label="X Coordinate">
                 <input id="asset-y" placeholder="Y (0-100)" type="number" min="0" max="100" class="w-full p-4 ml-2 rounded-lg" aria-label="Y Coordinate">
             </div>
+            <div class="flex justify-between mt-2">
+                <input id="asset-heading" placeholder="Heading (0-360)" type="number" min="0" max="360" class="w-full p-4 mr-2 rounded-lg" aria-label="Heading">
+                <input id="asset-speed" placeholder="Speed (0-10)" type="number" min="0" max="10" class="w-full p-4 ml-2 rounded-lg" aria-label="Speed">
+            </div>
             <button onclick="deployAsset()" class="w-full bg-white p-4 mt-2 rounded-lg font-bold" aria-label="Deploy Asset">DEPLOY UNIT</button>
 
             <hr class="border mt-4 mb-4">
@@ -51,6 +55,7 @@
             <div id="telemetry-panel" class="hidden mb-4 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
                 <p><strong>FORCE POSTURE:</strong> <span id="posture-val">...</span></p>
                 <p><strong>AVG SEPARATION:</strong> <span id="separation-val">...</span></p>
+                <p><strong>PREDICTED (5m):</strong> <span id="pred-posture-val">...</span></p>
             </div>
 
             <h2 class="text-sm font-bold text-gray-800">Active Assets</h2>
@@ -71,6 +76,7 @@
         const telemetryEl = document.getElementById('telemetry-panel');
         const postureEl = document.getElementById('posture-val');
         const sepEl = document.getElementById('separation-val');
+        const predPostureEl = document.getElementById('pred-posture-val');
 
         function toggleCmd() {
             const el = document.getElementById('cmd-console');
@@ -82,6 +88,8 @@
             const type = document.getElementById('asset-type').value;
             const x = document.getElementById('asset-x').value;
             const y = document.getElementById('asset-y').value;
+            const heading = document.getElementById('asset-heading').value;
+            const speed = document.getElementById('asset-speed').value;
 
             if (!name) return;
 
@@ -95,7 +103,9 @@
                     name,
                     type,
                     x: x ? parseInt(x) : undefined,
-                    y: y ? parseInt(y) : undefined
+                    y: y ? parseInt(y) : undefined,
+                    heading: heading ? parseInt(heading) : undefined,
+                    speed: speed ? parseInt(speed) : undefined
                 })
             });
             fetchStatus();
@@ -154,13 +164,64 @@
                         dot.style.left = `calc(${a.x}% - 4px)`;
                         dot.style.top = `calc(${a.y}% - 4px)`;
                         dot.title = `${a.name} (${a.type})`;
+
+                        // Vector
+                        if (a.speed > 0) {
+                            const vec = document.createElement('div');
+                            vec.className = 'absolute bg-red-400 origin-top-left';
+                            vec.style.left = `calc(${a.x}%)`;
+                            vec.style.top = `calc(${a.y}%)`;
+                            vec.style.width = '2px';
+                            vec.style.height = `${a.speed * 4}px`;
+                            // Rotate: heading is 0=North (Up). CSS rotate 0 is Down (if using height?).
+                            // If element is vertical line (height), then rotate 0 is pointing down.
+                            // We want 0=Up. So rotate(180deg) is Up.
+                            // If heading is 90 (East), we want Right.
+                            // Current: 0 -> Down. 180 -> Up.
+                            // We want: 0 -> Up. 90 -> Right.
+                            // So rotate(heading + 180).
+                            // Wait. Heading 0 = North (Up).
+                            // CSS transform rotate(0) on a vertical div usually points down if you think of it hanging?
+                            // No, it just sits there.
+                            // Let's assume the div is a vertical line of height H.
+                            // It goes from top to bottom.
+                            // If we rotate it, it rotates around origin.
+                            // If origin is top-left.
+                            // We want the line to point in direction of movement.
+                            // 0 deg = Up.
+                            // Default vertical line points Down (positive Y).
+                            // So to point Up, we need rotate(180deg).
+                            // If Heading 90 (East), we need rotate(270deg) (Points Left?) No.
+                            // Down -> Left is -90 or 270.
+                            // Down -> Right is -90 (270).
+                            // Let's verify.
+                            // 0 (N) -> Need Up.
+                            // 90 (E) -> Need Right.
+                            // 180 (S) -> Need Down.
+                            // 270 (W) -> Need Left.
+                            // Default: Down (180 equivalent in our target system).
+                            // So Default + X = Target.
+                            // 180 + X = 0 => X = -180.
+                            // 180 + X = 90 => X = -90.
+                            // 180 + X = 180 => X = 0.
+                            // 180 + X = 270 => X = 90.
+                            // So Rotation = Heading - 180.
+                            vec.style.transform = `rotate(${a.heading - 180}deg)`;
+                            return [dot, vec];
+                        }
+
                         return dot;
                     });
+                    // Flatten array
+                    const flatChildren = mapChildren.flat();
 
                     if (data.telemetry) {
                         telemetryEl.classList.remove('hidden');
                         postureEl.textContent = data.telemetry.posture;
                         sepEl.textContent = data.telemetry.avgSeparation;
+                        if (data.prediction) {
+                            predPostureEl.textContent = data.prediction.posture;
+                        }
 
                         const center = document.createElement('div');
                         center.className = 'absolute w-4 h-4 border-2 border-red-500 rounded-full opacity-50';
@@ -170,7 +231,7 @@
                     } else {
                         telemetryEl.classList.add('hidden');
                     }
-                    mapEl.replaceChildren(...mapChildren);
+                    mapEl.replaceChildren(...flatChildren);
 
                     // Update List
                     if (data.assets.length) {
@@ -181,7 +242,7 @@
                             nameSpan.textContent = a.name;
                             const typeSpan = document.createElement('span');
                             typeSpan.className = 'font-bold';
-                            typeSpan.textContent = `${a.type || 'Unit'} [${a.x},${a.y}]`;
+                            typeSpan.textContent = `${a.type || 'Unit'} [${a.x},${a.y}] v:${a.speed || 0}`;
                             div.appendChild(nameSpan);
                             div.appendChild(typeSpan);
                             return div;
